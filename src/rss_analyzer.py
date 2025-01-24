@@ -129,16 +129,15 @@ class RSSAnalyzer:
         try:
             # Get feed content
             content = self._fetch_feed_content(feed_url)
-            if content is None:
+            if not content:
                 return
-            
+                
+            # Parse feed
             feed = feedparser.parse(content)
-            
-            if feed.bozo and not isinstance(feed.bozo_exception, feedparser.CharacterEncodingOverride):
-                logger.error(f"Feed parsing error for {feed_url}: {feed.bozo_exception}")
-                print(f"Error parsing feed: {feed.bozo_exception}")
+            if not feed.entries:
+                logger.info(f"No entries found in feed: {feed_url}")
                 return
-            
+                
             feed_title = feed.get('feed', {}).get('title', feed_url)
             total_entries = len(feed.entries)
             logger.info(f"Successfully fetched feed: {feed_title}")
@@ -156,7 +155,7 @@ class RSSAnalyzer:
             
             # Process articles in batches
             total_processed = 0
-            last_date = None
+            latest_date = None
             
             for batch_num, batch in enumerate(
                 self._batch_articles(new_articles), 1
@@ -169,9 +168,12 @@ class RSSAnalyzer:
                 batch_count = self._process_article_batch(batch)
                 total_processed += batch_count
                 
-                # Update the last processed date
+                # Update the latest processed date
                 if batch_count > 0:
-                    last_date = batch[0]['normalized_date']
+                    # Get the latest date from successfully processed articles
+                    batch_dates = [a['normalized_date'] for a in batch]
+                    max_date = max(batch_dates)
+                    latest_date = max(max_date, latest_date) if latest_date else max_date
                 
                 logger.info(
                     f"Successfully processed {batch_count}/{len(batch)} "
@@ -179,13 +181,13 @@ class RSSAnalyzer:
                 )
             
             # Update state if we processed any articles
-            if total_processed > 0 and last_date:
+            if total_processed > 0 and latest_date:
                 self.state_manager.update_feed_state(
                     feed_url=feed_url,
-                    last_pub_date=last_date,
+                    last_pub_date=latest_date,
                     processed_count=total_processed
                 )
-            
+        
         except Exception as e:
             logger.error(f"Error processing feed {feed_url}: {str(e)}")
             logger.error("Error processing feed:", exc_info=True)

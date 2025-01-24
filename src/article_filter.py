@@ -150,7 +150,7 @@ class ArticleFilter:
             
         criteria_text = "\n".join(f"- {c}" for c in skip_criteria)
         
-        return f"""Analyze this article content and determine if it should be read or skipped based on the following criteria:
+        return f"""Analyze this article content and determine if it should be read or skipped based on the following criteria that I don't want to read about:
 
 {criteria_text}
 

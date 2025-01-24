@@ -131,12 +131,12 @@ class StateManager:
         Args:
             feed_url: URL of the feed
             last_pub_date: Last publication date processed
-            processed_count: Number of articles processed
+            processed_count: Number of articles processed in this run
         """
         logger.debug(
             f"Updating state for feed {feed_url}\n"
             f"Last pub date: {last_pub_date.isoformat()}\n"
-            f"Processed count: {processed_count}"
+            f"Articles processed in this run: {processed_count}"
         )
         
         # Ensure the date is timezone-aware
@@ -147,11 +147,20 @@ class StateManager:
         if 'feeds' not in self.state:
             self.state['feeds'] = {}
             
+        # Get existing state
+        feed_state = self.state['feeds'].get(feed_url, {})
+        total_processed = feed_state.get('processed_count', 0) + processed_count
+        
+        # Update state
         self.state['feeds'][feed_url] = {
             'last_pub_date': last_pub_date.isoformat(),
             'last_processed': datetime.now(tz.tzutc()).isoformat(),
-            'processed_count': processed_count
+            'processed_count': total_processed
         }
         
-        logger.debug(f"New state for feed {feed_url}: {self.state['feeds'][feed_url]}")
+        logger.debug(
+            f"Updated state for feed {feed_url}:\n"
+            f"Total processed: {total_processed}\n"
+            f"Last pub date: {last_pub_date.isoformat()}"
+        )
         self.save_state()
