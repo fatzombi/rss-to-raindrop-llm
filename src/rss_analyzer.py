@@ -10,6 +10,9 @@ from .raindrop_client import RaindropClient
 from .state import StateManager
 from .utils import get_article_date, ensure_timezone
 
+# Configure feedparser
+feedparser.USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+
 logger = logging.getLogger(__name__)
 
 class RSSAnalyzer:
@@ -59,7 +62,12 @@ class RSSAnalyzer:
             Feed content as string or None if failed
         """
         try:
-            response = requests.get(feed_url, timeout=30)
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/rss+xml, application/xml, application/atom+xml, application/json, text/xml;q=0.9, */*;q=0.8'
+            }
+            
+            response = requests.get(feed_url, headers=headers, timeout=30)
             response.raise_for_status()
             
             # Try to detect the encoding from the response headers
