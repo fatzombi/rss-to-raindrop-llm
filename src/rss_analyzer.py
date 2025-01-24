@@ -283,8 +283,14 @@ class RSSAnalyzer:
         Returns:
             Number of articles successfully processed
         """
-        processed_count = 0
-        save_skipped = self.config['raindrop'].get('save_skipped', True)
+        if not articles:
+            return 0
+            
+        # Analyze all articles in batch
+        read_articles = []
+        read_reasons = []
+        skip_articles = []
+        skip_reasons = []
         
         for article in articles:
             try:
@@ -292,42 +298,59 @@ class RSSAnalyzer:
                 should_skip, reason = self.article_filter.should_skip(article)
                 
                 if should_skip:
-                    if save_skipped:
-                        logger.info(
-                            f"Adding article to skip collection: {article.get('title', 'No title')} - "
-                            f"Reason: {reason}"
-                        )
-                        # Add to skip collection
-                        self.raindrop_client.add_bookmark(
-                            article,
-                            self.skip_collection,
-                            reason=reason
-                        )
-                        processed_count += 1
-                    else:
-                        logger.info(
-                            f"Skipping article (not saving): {article.get('title', 'No title')} - "
-                            f"Reason: {reason}"
-                        )
-                        continue
+                    logger.info(
+                        f"Adding article to skip collection: {article.get('title', 'No title')} - "
+                        f"Reason: {reason}"
+                    )
+                    skip_articles.append(article)
+                    skip_reasons.append(reason)
                 else:
                     logger.info(
                         f"Adding article to read collection: {article.get('title', 'No title')} - "
                         f"Reason: {reason}"
                     )
-                    # Add to read collection
-                    self.raindrop_client.add_bookmark(
-                        article,
-                        self.read_collection,
-                        reason=reason
-                    )
-                    processed_count += 1
-                
+                    read_articles.append(article)
+                    read_reasons.append(reason)
+                    
             except Exception as e:
                 logger.error(
-                    f"Error processing article {article.get('title', 'No title')}: "
+                    f"Error analyzing article {article.get('title', 'No title')}: "
                     f"{str(e)}"
                 )
                 continue
+        
+        processed_count = 0
+        
+        # Add read articles in batch
+        if read_articles:
+            try:
+                logger.info(f"Saving batch of {len(read_articles)} articles to read collection")
+                count = self.raindrop_client.add_bookmarks(
+                    read_articles,
+                    self.read_collection,
+                    read_reasons
+                )
+                processed_count += count
+            except Exception as e:
+                logger.error(f"Error adding read articles: {str(e)}")
+        
+        # Add skip articles in batch if configured
+        if skip_articles and self.config['raindrop'].get('save_skipped', True):
+            try:
+                logger.info(f"Saving batch of {len(skip_articles)} articles to skip collection")
+                count = self.raindrop_client.add_bookmarks(
+                    skip_articles,
+                    self.skip_collection,
+                    skip_reasons
+                )
+                processed_count += count
+            except Exception as e:
+                logger.error(f"Error adding skip articles: {str(e)}")
+        elif skip_articles:
+            logger.info(f"Skipping {len(skip_articles)} articles (not saving)")
+            for article in skip_articles:
+                logger.info(
+                    f"Skipping article (not saving): {article.get('title', 'No title')}"
+                )
         
         return processed_count

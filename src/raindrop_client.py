@@ -26,6 +26,74 @@ class RaindropClient:
             'Content-Type': 'application/json'
         })
     
+    def add_bookmarks(
+        self,
+        articles: List[Dict[str, Any]],
+        collection_id: int,
+        reasons: Optional[List[str]] = None
+    ) -> int:
+        """
+        Add multiple articles as bookmarks in a single request.
+        
+        Args:
+            articles: List of articles to add
+            collection_id: Raindrop collection ID
+            reasons: Optional list of reasons from LLM analysis
+            
+        Returns:
+            Number of bookmarks successfully added
+        """
+        if not articles:
+            return 0
+            
+        # Prepare items for batch request
+        items = []
+        for i, article in enumerate(articles):
+            # Extract article data
+            link = article.get('link')
+            if not link:
+                logger.warning("Article missing required link field")
+                continue
+                
+            title = article.get('title', '')
+            pub_date = get_article_date(article)
+            reason = reasons[i] if reasons else None
+            
+            # Prepare bookmark data
+            item = {
+                "link": link,
+                "title": title,
+                "excerpt": reason if reason else article.get('summary', ''),
+                "created": pub_date.isoformat() if pub_date else None,
+                "collection": {"$id": collection_id}
+            }
+            
+            # Remove None values
+            item = {k: v for k, v in item.items() if v is not None}
+            items.append(item)
+        
+        if not items:
+            return 0
+            
+        try:
+            # Make batch API request
+            logger.debug(f"Adding {len(items)} bookmarks to collection {collection_id}")
+            response = self.session.post(
+                f"{self.API_BASE}/raindrops",
+                json={"items": items}
+            )
+            response.raise_for_status()
+            
+            result = response.json()
+            added_count = len(result.get('items', []))
+            logger.info(f"Successfully added {added_count} bookmarks")
+            return added_count
+            
+        except Exception as e:
+            logger.error(f"Error adding bookmarks: {str(e)}")
+            logger.error("API Response:", exc_info=True)
+            raise
+    
     def add_bookmark(
         self,
         article: Dict[str, Any],
@@ -40,43 +108,7 @@ class RaindropClient:
             collection_id: Raindrop collection ID
             reason: Optional reason from LLM analysis
         """
-        # Extract article data
-        link = article.get('link')
-        if not link:
-            logger.warning("Article missing required link field")
-            return
-            
-        title = article.get('title', '')
-        pub_date = get_article_date(article)
-        
-        try:
-            # Prepare bookmark data
-            item = {
-                "link": link,
-                "title": title,
-                "excerpt": reason if reason else article.get('summary', ''),
-                "created": pub_date.isoformat() if pub_date else None,
-                "collection": {"$id": collection_id}
-            }
-            
-            # Remove None values
-            item = {k: v for k, v in item.items() if v is not None}
-            
-            logger.debug(f"Adding bookmark: {item}")
-            
-            # Make API request with items array
-            response = self.session.post(
-                f"{self.API_BASE}/raindrops",
-                json={"items": [item]}
-            )
-            response.raise_for_status()
-            
-            logger.info(f"Successfully added bookmark: {title}")
-            
-        except Exception as e:
-            logger.error(f"Error adding bookmark {title}: {str(e)}")
-            logger.error("API Response:", exc_info=True)
-            raise
+        self.add_bookmarks([article], collection_id, [reason] if reason else None)
     
     def _make_request(
         self,
