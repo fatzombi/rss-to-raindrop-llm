@@ -1,0 +1,26 @@
+raindrop:
+  token: "your-token"
+  collections:
+    read: "collection-id-for-read"
+    skip: "collection-id-for-skip"
+  save_skipped: true  # Set to false once filters are tuned
+
+openai:
+  api_key: "your-openai-api-key"  # Optional: can also use OPENAI_API_KEY environment variable
+  model: "gpt-4-turbo-preview"    # Model to use for article analysis
+
+processing:
+  batch_size: 5  # Number of articles to process in each batch
+
+filters:
+  max_article_age_years: 3
+  skip_criteria:
+    - "CTF walkthroughs"
+    - "Basic tutorials"
+    - "Marketing content"
+    - "News aggregation without analysis"
+    - "Vulnerability announcements without technical details"
+
+feeds:
+  - "https://feed1.com/rss"
+  - "https://feed2.com/feed.xml"
