@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Tuple, Optional, Union
 from openai import OpenAI
 from .utils import get_article_date
+import tiktoken
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,11 @@ class ArticleFilter:
             self.client = None
             self.openai_model = None
             logger.warning("No OpenAI API key provided, skipping content analysis")
-    
+        
+        self.encoding = tiktoken.encoding_for_model(self.openai_model)
+        # Reserve tokens for system message and completion
+        self.max_tokens = 128000 - 4000  # Reserve 4k tokens for system and response
+        
     def should_skip(self, article: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
         """
         Check if an article should be skipped.
@@ -157,29 +162,39 @@ class ArticleFilter:
 Important notes:
 1. Default to "read" unless the article clearly matches one of the skip criteria
 3. Only skip if you are very confident the article matches a skip criterion
-
+        
 Article content:
 {content}
+        
+        Respond with a JSON object containing:
+        1. "status": Either "read" or "skip"
+        2. "reason": A brief explanation of why the article should be read or skipped
 
-Respond with a JSON object containing:
-1. "status": Either "read" or "skip"
-2. "reason": A brief explanation of why the article should be read or skipped
+        Example response for a good article:
+        {{
+            "status": "read",
+            "reason": "Article contains novel security research findings about a zero-day vulnerability"
+        }}
 
-Example response for a good article:
-{{
-    "status": "read",
-    "reason": "Article contains novel security research findings about a zero-day vulnerability"
-}}
+        or
 
-or
+        {{
+            "status": "skip",
+            "reason": "Article is a basic tutorial covering well-known concepts"
+        }}
 
-{{
-    "status": "skip",
-    "reason": "Article is a basic tutorial covering well-known concepts"
-}}
-
-Response:"""
-
+        Response:"""
+        
+        template_tokens = len(self.encoding.encode(prompt_template.format(criteria_text, "")))
+        
+        # Calculate remaining tokens for article
+        article_max_tokens = self.max_tokens - template_tokens
+        
+        # Truncate article text if needed
+        truncated_content = self._truncate_to_token_limit(content, article_max_tokens)
+        
+        return prompt_template.format(criteria_text, truncated_content)
+    
     def _get_article_content(self, article: Dict[str, Any]) -> str:
         """
         Extract content from article.
@@ -193,3 +208,22 @@ Response:"""
         content = f"Title: {article.get('title', '')}\n"
         content += f"Description: {article.get('summary', '')}\n"
         return content
+    
+    def _truncate_to_token_limit(self, text: str, max_tokens: int) -> str:
+        """
+        Truncate text to stay within token limit.
+        
+        Args:
+            text: Text to truncate
+            max_tokens: Maximum number of tokens allowed
+            
+        Returns:
+            Truncated text
+        """
+        tokens = self.encoding.encode(text)
+        if len(tokens) <= max_tokens:
+            return text
+            
+        logger.warning(f"Text exceeds token limit ({len(tokens)} tokens). Truncating to {max_tokens} tokens.")
+        truncated_tokens = tokens[:max_tokens]
+        return self.encoding.decode(truncated_tokens)
