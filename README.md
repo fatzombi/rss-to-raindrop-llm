@@ -22,7 +22,7 @@ An intelligent RSS feed processor that filters articles using GPT-4 and saves th
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/rss-to-raindrop-llm.git
+git clone https://github.com/fatzombi/rss-to-raindrop-llm.git
 cd rss-to-raindrop-llm
 ```
 
