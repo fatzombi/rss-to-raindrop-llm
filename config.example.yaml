@@ -1,8 +1,9 @@
 raindrop:
   token: "your-token"
   collections:
-    read: "collection-id-for-read"
-    skip: "collection-id-for-skip"
+    read: "collection-id-for-read"    # High priority, matches interests strongly
+    maybe: "collection-id-for-maybe"        # Potentially interesting but not urgent
+    skip: "collection-id-for-skip"          # Articles to skip entirely
   save_skipped: true  # Set to false once filters are tuned
 
 openai:
@@ -14,12 +15,45 @@ processing:
 
 filters:
   max_article_age_years: 3
+  personas:
+    - name: "Security Engineer"
+      interests:
+        - "Application security and secure coding practices"
+        - "Cloud security and infrastructure hardening"
+        - "Security tooling and automation"
+        - "Threat detection and incident response"
+      
+    - name: "DevOps Engineer"
+      interests:
+        - "Infrastructure as Code and automation"
+        - "Containerization and orchestration"
+        - "CI/CD and deployment strategies"
+        - "Monitoring and observability"
+
+  priority_topics:
+    - "Zero-day vulnerabilities and novel attack techniques"
+    - "Security research with practical applications"
+    - "Infrastructure automation and scaling strategies"
+    - "Real-world incident analysis and lessons learned"
+
   skip_criteria:
-    - "CTF walkthroughs"
-    - "Basic tutorials"
-    - "Marketing content"
-    - "News aggregation without analysis"
-    - "Vulnerability announcements without technical details"
+    - "Articles about HackTheBox, TryHackMe, VulnHub, or other intentionally vulnerable platforms. Unless the article is a compilation of multiple resources."
+    - "Hardware hacking"
+    - "Novelty hardware"
+    - "Rants without a specific topic or evidence to support them"
+
+  collection_rules:
+    read:
+      - "Strongly aligns with at least one persona's interests"
+      - "Contains actionable information or novel insights"
+      - "Matches priority topics"
+    maybe:
+      - "Partially aligns with interests but requires further evaluation"
+      - "Could be useful but not immediately actionable"
+      - "Topics adjacent to core interests"
+    skip:
+      - "Matches skip criteria"
+      - "Contains unactionable information"
 
 feeds:
   - "https://feed1.com/rss"

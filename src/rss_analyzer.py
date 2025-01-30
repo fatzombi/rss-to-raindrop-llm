@@ -40,7 +40,10 @@ class RSSAnalyzer:
         
         self.article_filter = ArticleFilter(
             max_age_years=config['filters'].get('max_article_age_years', 5),
+            personas=config['filters'].get('personas', []),
+            priority_topics=config['filters'].get('priority_topics', []),
             skip_criteria=config['filters'].get('skip_criteria', []),
+            collection_rules=config['filters'].get('collection_rules', {}),
             openai_config={
                 'api_key': config['openai'].get('api_key'),
                 'model': config['openai'].get('model')
@@ -48,8 +51,9 @@ class RSSAnalyzer:
         )
         
         self.batch_size = config['processing'].get('batch_size', 5)
-        self.read_collection = int(config['raindrop']['collections']['read'])
-        self.skip_collection = int(config['raindrop']['collections']['skip'])
+        self.collections = {
+            name: int(id) for name, id in config['raindrop']['collections'].items()
+        }
     
     def _fetch_feed_content(self, feed_url: str) -> Optional[str]:
         """
@@ -294,71 +298,76 @@ class RSSAnalyzer:
         if not articles:
             return 0
             
-        # Analyze all articles in batch
-        read_articles = []
-        read_reasons = []
-        skip_articles = []
-        skip_reasons = []
+        # Initialize article lists for each collection
+        collection_articles = {
+            collection: [] for collection in self.collections.keys()
+        }
+        collection_reasons = {
+            collection: [] for collection in self.collections.keys()
+        }
         
         for article in articles:
             try:
-                # Check if we should skip this article
-                should_skip, reason = self.article_filter.should_skip(article)
+                # Log article details before processing
+                logger.debug(f"Processing article: {article.get('title', 'No title')}")
+                logger.debug(f"Article URL: {article.get('link', 'No link')}")
+                logger.debug(f"Article content length: {len(str(article.get('content', '')))}")
                 
-                if should_skip:
-                    logger.info(
-                        f"Adding article to skip collection: {article.get('title', 'No title')} - "
-                        f"Reason: {reason}"
-                    )
-                    skip_articles.append(article)
-                    skip_reasons.append(reason)
-                else:
-                    logger.info(
-                        f"Adding article to read collection: {article.get('title', 'No title')} - "
-                        f"Reason: {reason}"
-                    )
-                    read_articles.append(article)
-                    read_reasons.append(reason)
-                    
-            except Exception as e:
-                logger.error(
-                    f"Error analyzing article {article.get('title', 'No title')}: "
-                    f"{str(e)}"
+                # Analyze article to determine collection
+                try:
+                    collection, reason = self.article_filter.analyze_article(article)
+                    logger.debug(f"Analysis result - Collection: {collection}, Reason: {reason}")
+                except Exception as analysis_error:
+                    logger.error(f"Error during article analysis: {str(analysis_error)}", exc_info=True)
+                    logger.error(f"Article that caused error: {article}")
+                    raise
+                
+                if not collection or not isinstance(collection, str):
+                    logger.error(f"Invalid collection type returned: {type(collection)}")
+                    logger.error(f"Collection value: {collection}")
+                    continue
+                
+                if collection not in self.collections:
+                    logger.error(f"Unknown collection returned: {collection}")
+                    logger.error(f"Valid collections are: {list(self.collections.keys())}")
+                    continue
+                
+                logger.info(
+                    f"Adding article to {collection} collection: {article.get('title', 'No title')} - "
+                    f"Reason: {reason}"
                 )
+                collection_articles[collection].append(article)
+                collection_reasons[collection].append(reason)
+                
+            except Exception as e:
+                logger.error(f"Error processing article: {str(e)}")
+                logger.error("Full error details:", exc_info=True)
+                logger.error(f"Article that caused error: {article}")
                 continue
         
+        # Save articles to their respective collections
         processed_count = 0
-        
-        # Add read articles in batch
-        if read_articles:
+        for collection, articles in collection_articles.items():
+            if not articles:
+                continue
+                
             try:
-                logger.info(f"Saving batch of {len(read_articles)} articles to read collection")
-                count = self.raindrop_client.add_bookmarks(
-                    read_articles,
-                    self.read_collection,
-                    read_reasons
+                collection_id = self.collections[collection]
+                reasons = collection_reasons[collection]
+                
+                # Only save to skip collection if configured
+                if collection == 'skip' and not self.config['raindrop'].get('save_skipped', True):
+                    logger.info(f"Skipping {len(articles)} articles (save_skipped=False)")
+                    continue
+                
+                self.raindrop_client.add_bookmarks(
+                    articles,
+                    collection_id,
+                    reasons
                 )
-                processed_count += count
+                processed_count += len(articles)
+                
             except Exception as e:
-                logger.error(f"Error adding read articles: {str(e)}")
-        
-        # Add skip articles in batch if configured
-        if skip_articles and self.config['raindrop'].get('save_skipped', True):
-            try:
-                logger.info(f"Saving batch of {len(skip_articles)} articles to skip collection")
-                count = self.raindrop_client.add_bookmarks(
-                    skip_articles,
-                    self.skip_collection,
-                    skip_reasons
-                )
-                processed_count += count
-            except Exception as e:
-                logger.error(f"Error adding skip articles: {str(e)}")
-        elif skip_articles:
-            logger.info(f"Skipping {len(skip_articles)} articles (not saving)")
-            for article in skip_articles:
-                logger.info(
-                    f"Skipping article (not saving): {article.get('title', 'No title')}"
-                )
+                logger.error(f"Error saving articles to {collection} collection: {str(e)}")
         
         return processed_count
