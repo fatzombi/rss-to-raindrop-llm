@@ -18,10 +18,15 @@
                 "iam:UntagRole",
                 "iam:PassRole",
                 "iam:ListInstanceProfilesForRole",
-                "iam:ListRoleTags"
+                "iam:ListRoleTags",
+                "iam:CreatePolicy",
+                "iam:DeletePolicy",
+                "iam:GetPolicy",
+                "iam:ListPolicyVersions"
             ],
             "Resource": [
-                "arn:aws:iam::*:role/rss_to_raindrop_lambda_role"
+                "arn:aws:iam::*:role/rss_to_raindrop_lambda_role",
+                "arn:aws:iam::*:policy/rss_to_raindrop_secrets_access"
             ]
         },
         {
@@ -38,7 +43,11 @@
                 "lambda:ListVersionsByFunction",
                 "lambda:ListTags",
                 "lambda:TagResource",
-                "lambda:UntagResource"
+                "lambda:UntagResource",
+                "lambda:GetFunctionCodeSigningConfig",
+                "lambda:PutFunctionCodeSigningConfig",
+                "lambda:DeleteFunctionCodeSigningConfig",
+                "lambda:ListFunctionsByCodeSigningConfig"
             ],
             "Resource": [
                 "arn:aws:lambda:*:*:function:rss-to-raindrop"

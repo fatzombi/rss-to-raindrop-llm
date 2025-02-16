@@ -115,6 +115,17 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Check Required Secrets
+        run: |
+          if [ -z "${{ secrets.raindrop_api_token_rss_to_raindrop_llm }}" ]; then
+            echo "Error: raindrop_api_token_rss_to_raindrop_llm secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.openai_api_token_rss_to_raindrop_llm }}" ]; then
+            echo "Error: openai_api_token_rss_to_raindrop_llm secret is not set"
+            exit 1
+          fi
+
       - name: Delete Existing Resources
         run: |
           # List and detach all attached policies
