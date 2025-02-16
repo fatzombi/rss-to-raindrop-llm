@@ -2,3 +2,6 @@
 config.yaml
 state.json
 *.pyc
+infrastructure/.terraform
+infrastructure/.terraform.lock.hcl
+infrastructure/lambda_function.zip
