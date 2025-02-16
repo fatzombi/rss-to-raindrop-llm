@@ -73,21 +73,24 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.5.7"
+          terraform_version: "1.10.5"
 
       - name: Terraform Init
         run: terraform init
 
-      # - name: Import Existing Resources
-      #   run: |
-      #     # Import the Lambda role if it exists
-      #     terraform import aws_iam_role.lambda_role rss_to_raindrop_lambda_role || true
-      #     # Import the role policy attachment if it exists
-      #     terraform import aws_iam_role_policy_attachment.lambda_basic rss_to_raindrop_lambda_role/AWSLambdaBasicExecutionRole || true
+      - name: Import Existing Resources
+        run: |
+          # Import the Lambda role if it exists
+          terraform import aws_iam_role.lambda_role rss_to_raindrop_lambda_role || true
+          # Import the role policy attachment if it exists
+          terraform import aws_iam_role_policy_attachment.lambda_basic rss_to_raindrop_lambda_role/AWSLambdaBasicExecutionRole || true
 
       - name: Terraform Plan
-        run: terraform plan
-  
+        run: |
+          terraform plan \
+            -var="raindrop_test_token=${{ secrets.raindrop_test_token }}" \
+            -var="openai_test_token=${{ secrets.openai_test_token }}"
+
   deploy:
     needs: [plan]
     runs-on: ubuntu-latest
@@ -119,12 +122,12 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      # - name: Import Existing Resources
-      #   run: |
-      #     # Import the Lambda role if it exists
-      #     terraform import aws_iam_role.lambda_role rss_to_raindrop_lambda_role || true
-      #     # Import the role policy attachment if it exists
-      #     terraform import aws_iam_role_policy_attachment.lambda_basic rss_to_raindrop_lambda_role/AWSLambdaBasicExecutionRole || true
+      - name: Import Existing Resources
+        run: |
+          # Import the Lambda role if it exists
+          terraform import aws_iam_role.lambda_role rss_to_raindrop_lambda_role || true
+          # Import the role policy attachment if it exists
+          terraform import aws_iam_role_policy_attachment.lambda_basic rss_to_raindrop_lambda_role/AWSLambdaBasicExecutionRole || true
 
       - name: Terraform Apply
         run: |
