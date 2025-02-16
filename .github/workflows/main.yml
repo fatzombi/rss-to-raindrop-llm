@@ -81,8 +81,8 @@ jobs:
       - name: Terraform Plan
         run: |
           terraform plan \
-            -var="raindrop_api_token_rss_to_raindrop_llm=${{ secrets.raindrop_api_token_rss_to_raindrop_llm }}" \
-            -var="openai_api_token_rss_to_raindrop_llm=${{ secrets.openai_api_token_rss_to_raindrop_llm }}"
+            -var="raindrop_api_token_rss_to_raindrop_llm=${{ secrets.RAINDROP_API_TOKEN }}" \
+            -var="openai_api_token_rss_to_raindrop_llm=${{ secrets.OPENAI_API_TOKEN }}"
 
   deploy:
     needs: [plan]
@@ -117,12 +117,12 @@ jobs:
 
       - name: Check Required Secrets
         run: |
-          if [ -z "${{ secrets.raindrop_api_token_rss_to_raindrop_llm }}" ]; then
-            echo "Error: raindrop_api_token_rss_to_raindrop_llm secret is not set"
+          if [ -z "${{ secrets.RAINDROP_API_TOKEN }}" ]; then
+            echo "Error: RAINDROP_API_TOKEN secret is not set"
             exit 1
           fi
-          if [ -z "${{ secrets.openai_api_token_rss_to_raindrop_llm }}" ]; then
-            echo "Error: openai_api_token_rss_to_raindrop_llm secret is not set"
+          if [ -z "${{ secrets.OPENAI_API_TOKEN }}" ]; then
+            echo "Error: OPENAI_API_TOKEN secret is not set"
             exit 1
           fi
 
@@ -147,5 +147,5 @@ jobs:
       - name: Terraform Apply
         run: |
           terraform apply -auto-approve \
-            -var="raindrop_api_token_rss_to_raindrop_llm=${{ secrets.raindrop_api_token_rss_to_raindrop_llm }}" \
-            -var="openai_api_token_rss_to_raindrop_llm=${{ secrets.openai_api_token_rss_to_raindrop_llm }}"
+            -var="raindrop_api_token_rss_to_raindrop_llm=${{ secrets.RAINDROP_API_TOKEN }}" \
+            -var="openai_api_token_rss_to_raindrop_llm=${{ secrets.OPENAI_API_TOKEN }}"
