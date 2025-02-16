@@ -81,14 +81,14 @@ jobs:
       - name: Import Existing Resources
         run: |
           # Import the secrets if they exist
-          terraform import aws_secretsmanager_secret.raindrop_test_token rss-to-raindrop/raindrop-api-token || true
-          terraform import aws_secretsmanager_secret.openai_test_token rss-to-raindrop/openai-api-token || true
+          terraform import aws_secretsmanager_secret.raindrop_api_token rss-to-raindrop/raindrop-api-token || true
+          terraform import aws_secretsmanager_secret.openai_api_token rss-to-raindrop/openai-api-token || true
 
       - name: Terraform Plan
         run: |
           terraform plan \
-            -var="raindrop_test_token=${{ secrets.raindrop_test_token }}" \
-            -var="openai_test_token=${{ secrets.openai_test_token }}"
+            -var="raindrop_api_token=${{ secrets.raindrop_api_token }}" \
+            -var="openai_api_token=${{ secrets.openai_api_token }}"
 
   deploy:
     needs: [plan]
@@ -116,7 +116,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.5.7"
+          terraform_version: "1.10.5"
 
       - name: Terraform Init
         run: terraform init
@@ -124,11 +124,11 @@ jobs:
       - name: Import Existing Resources
         run: |
           # Import the secrets if they exist
-          terraform import aws_secretsmanager_secret.raindrop_test_token rss-to-raindrop/raindrop-api-token || true
-          terraform import aws_secretsmanager_secret.openai_test_token rss-to-raindrop/openai-api-token || true
+          terraform import aws_secretsmanager_secret.raindrop_api_token rss-to-raindrop/raindrop-api-token || true
+          terraform import aws_secretsmanager_secret.openai_api_token rss-to-raindrop/openai-api-token || true
 
       - name: Terraform Apply
         run: |
           terraform apply -auto-approve \
-            -var="raindrop_test_token=${{ secrets.raindrop_test_token }}" \
-            -var="openai_test_token=${{ secrets.openai_test_token }}"
+            -var="raindrop_api_token=${{ secrets.raindrop_api_token }}" \
+            -var="openai_api_token=${{ secrets.openai_api_token }}"
