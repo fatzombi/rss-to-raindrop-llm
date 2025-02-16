@@ -17,6 +17,7 @@
                 "iam:TagRole",
                 "iam:UntagRole",
                 "iam:PassRole",
+                "iam:ListInstanceProfilesForRole",
                 "iam:ListRoleTags"
             ],
             "Resource": [
@@ -57,10 +58,13 @@
                 "secretsmanager:PutResourcePolicy",
                 "secretsmanager:DeleteResourcePolicy",
                 "secretsmanager:TagResource",
-                "secretsmanager:UntagResource"
+                "secretsmanager:UntagResource",
+                "secretsmanager:RestoreSecret",
+                "secretsmanager:ListTagsForResource"
             ],
             "Resource": [
-                "arn:aws:secretsmanager:*:*:secret:rss-to-raindrop/*"
+                "arn:aws:secretsmanager:*:*:secret:rss-to-raindrop/*",
+                "arn:aws:secretsmanager:*:*:secret:rss-to-raindrop-llm/*"
             ]
         },
         {
