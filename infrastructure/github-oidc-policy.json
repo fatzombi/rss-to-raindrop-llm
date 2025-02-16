@@ -9,10 +9,15 @@
                 "iam:DeleteRole",
                 "iam:PutRolePolicy",
                 "iam:DeleteRolePolicy",
+                "iam:GetRolePolicy",
+                "iam:ListRolePolicies",
+                "iam:ListAttachedRolePolicies",
                 "iam:AttachRolePolicy",
                 "iam:DetachRolePolicy",
-                "iam:GetRolePolicy",
-                "iam:PassRole"
+                "iam:TagRole",
+                "iam:UntagRole",
+                "iam:PassRole",
+                "iam:ListRoleTags"
             ],
             "Resource": [
                 "arn:aws:iam::*:role/rss_to_raindrop_lambda_role"
@@ -28,7 +33,11 @@
                 "lambda:DeleteFunction",
                 "lambda:AddPermission",
                 "lambda:RemovePermission",
-                "lambda:GetPolicy"
+                "lambda:GetPolicy",
+                "lambda:ListVersionsByFunction",
+                "lambda:ListTags",
+                "lambda:TagResource",
+                "lambda:UntagResource"
             ],
             "Resource": [
                 "arn:aws:lambda:*:*:function:rss-to-raindrop"
@@ -42,7 +51,13 @@
                 "secretsmanager:PutSecretValue",
                 "secretsmanager:DeleteSecret",
                 "secretsmanager:DescribeSecret",
-                "secretsmanager:UpdateSecret"
+                "secretsmanager:UpdateSecret",
+                "secretsmanager:ListSecretVersionIds",
+                "secretsmanager:GetResourcePolicy",
+                "secretsmanager:PutResourcePolicy",
+                "secretsmanager:DeleteResourcePolicy",
+                "secretsmanager:TagResource",
+                "secretsmanager:UntagResource"
             ],
             "Resource": [
                 "arn:aws:secretsmanager:*:*:secret:rss-to-raindrop/*"
@@ -55,7 +70,11 @@
                 "events:DeleteRule",
                 "events:DescribeRule",
                 "events:PutTargets",
-                "events:RemoveTargets"
+                "events:RemoveTargets",
+                "events:ListTargetsByRule",
+                "events:TagResource",
+                "events:UntagResource",
+                "events:ListTagsForResource"
             ],
             "Resource": [
                 "arn:aws:events:*:*:rule/trigger-rss-to-raindrop-hourly"
