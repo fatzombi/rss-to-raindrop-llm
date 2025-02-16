@@ -78,6 +78,13 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      # - name: Import Existing Resources
+      #   run: |
+      #     # Import the Lambda role if it exists
+      #     terraform import aws_iam_role.lambda_role rss_to_raindrop_lambda_role || true
+      #     # Import the role policy attachment if it exists
+      #     terraform import aws_iam_role_policy_attachment.lambda_basic rss_to_raindrop_lambda_role/AWSLambdaBasicExecutionRole || true
+
       - name: Terraform Plan
         run: terraform plan
   
@@ -111,6 +118,13 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
+
+      # - name: Import Existing Resources
+      #   run: |
+      #     # Import the Lambda role if it exists
+      #     terraform import aws_iam_role.lambda_role rss_to_raindrop_lambda_role || true
+      #     # Import the role policy attachment if it exists
+      #     terraform import aws_iam_role_policy_attachment.lambda_basic rss_to_raindrop_lambda_role/AWSLambdaBasicExecutionRole || true
 
       - name: Terraform Apply
         run: terraform apply -auto-approve

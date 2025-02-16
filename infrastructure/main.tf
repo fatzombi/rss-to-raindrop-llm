@@ -36,14 +36,14 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
   role       = aws_iam_role.lambda_role.name
 }
 
-# Secrets Manager - Raindrop Token
-resource "aws_secretsmanager_secret" "raindrop_token" {
-  name = "rss-to-raindrop/raindrop-token"
+# Secrets Manager - Raindrop API Key
+resource "aws_secretsmanager_secret" "raindrop_api_token" {
+  name = "rss-to-raindrop/raindrop-api-token"
 }
 
 # Secrets Manager - OpenAI API Key
-resource "aws_secretsmanager_secret" "openai_api_key" {
-  name = "rss-to-raindrop/openai-api-key"
+resource "aws_secretsmanager_secret" "openai_api_token" {
+  name = "rss-to-raindrop/openai-api-token"
 }
 
 # IAM policy for Lambda to access secrets
@@ -58,8 +58,8 @@ resource "aws_iam_policy" "secrets_access" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = [
-          aws_secretsmanager_secret.raindrop_token.arn,
-          aws_secretsmanager_secret.openai_api_key.arn
+          aws_secretsmanager_secret.raindrop_api_token.arn,
+          aws_secretsmanager_secret.openai_api_token.arn
         ]
       }
     ]
@@ -86,8 +86,8 @@ resource "aws_lambda_function" "rss_to_raindrop" {
   environment {
     variables = {
       CONFIG_PATH           = "/tmp/config.yaml"
-      RAINDROP_SECRET_ARN  = aws_secretsmanager_secret.raindrop_token.arn
-      OPENAI_SECRET_ARN    = aws_secretsmanager_secret.openai_api_key.arn
+      RAINDROP_SECRET_ARN  = aws_secretsmanager_secret.raindrop_api_token.arn
+      OPENAI_SECRET_ARN    = aws_secretsmanager_secret.openai_api_token.arn
     }
   }
 }

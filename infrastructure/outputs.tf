@@ -9,11 +9,11 @@ output "lambda_function_name" {
 }
 
 output "raindrop_secret_arn" {
-  description = "ARN of the Raindrop token secret"
-  value       = aws_secretsmanager_secret.raindrop_token.arn
+  description = "ARN of the Raindrop API key"
+  value       = aws_secretsmanager_secret.raindrop_api_token.arn
 }
 
 output "openai_secret_arn" {
-  description = "ARN of the OpenAI API key secret"
-  value       = aws_secretsmanager_secret.openai_api_key.arn
+  description = "ARN of the OpenAI API key"
+  value       = aws_secretsmanager_secret.openai_api_token.arn
 }
