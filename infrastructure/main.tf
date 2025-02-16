@@ -28,7 +28,6 @@ variable "openai_api_token_rss_to_raindrop_llm" {
 # IAM role for Lambda
 resource "aws_iam_role" "lambda_role" {
   name = "rss_to_raindrop_lambda_role"
-  force_destroy = true
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -52,7 +51,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
 
 # Secrets Manager - Raindrop API Key
 resource "aws_secretsmanager_secret" "raindrop_api_token_rss_to_raindrop_llm" {
-  name_prefix = "rss-to-raindrop/raindrop-api-token-"
+  name_prefix = "rss-to-raindrop-llm/raindrop-api-token-"
   
   force_overwrite_replica_secret = true
 }
@@ -64,7 +63,7 @@ resource "aws_secretsmanager_secret_version" "raindrop_api_token_rss_to_raindrop
 
 # Secrets Manager - OpenAI API Key
 resource "aws_secretsmanager_secret" "openai_api_token_rss_to_raindrop_llm" {
-  name_prefix = "rss-to-raindrop/openai-api-token-"
+  name_prefix = "rss-to-raindrop-llm/openai-api-token-"
   
   force_overwrite_replica_secret = true
 }
