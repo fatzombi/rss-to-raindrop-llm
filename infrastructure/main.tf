@@ -52,6 +52,10 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
 # Secrets Manager - Raindrop API Key
 resource "aws_secretsmanager_secret" "raindrop_test_token" {
   name = "rss-to-raindrop/raindrop-api-token"
+  
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_secretsmanager_secret_version" "raindrop_test_token" {
@@ -62,6 +66,10 @@ resource "aws_secretsmanager_secret_version" "raindrop_test_token" {
 # Secrets Manager - OpenAI API Key
 resource "aws_secretsmanager_secret" "openai_test_token" {
   name = "rss-to-raindrop/openai-api-token"
+  
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_secretsmanager_secret_version" "openai_test_token" {

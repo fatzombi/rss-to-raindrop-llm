@@ -78,6 +78,12 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Import Existing Resources
+        run: |
+          # Import the secrets if they exist
+          terraform import aws_secretsmanager_secret.raindrop_test_token rss-to-raindrop/raindrop-api-token || true
+          terraform import aws_secretsmanager_secret.openai_test_token rss-to-raindrop/openai-api-token || true
+
       - name: Terraform Plan
         run: |
           terraform plan \
@@ -110,10 +116,16 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.10.5"
+          terraform_version: "1.5.7"
 
       - name: Terraform Init
         run: terraform init
+
+      - name: Import Existing Resources
+        run: |
+          # Import the secrets if they exist
+          terraform import aws_secretsmanager_secret.raindrop_test_token rss-to-raindrop/raindrop-api-token || true
+          terraform import aws_secretsmanager_secret.openai_test_token rss-to-raindrop/openai-api-token || true
 
       - name: Terraform Apply
         run: |
