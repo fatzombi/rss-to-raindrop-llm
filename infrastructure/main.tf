@@ -13,13 +13,13 @@ provider "aws" {
 }
 
 # Variables for API tokens
-variable "raindrop_api_token" {
+variable "raindrop_api_token_rss_to_raindrop_llm" {
   description = "Raindrop API token"
   type        = string
   sensitive   = true
 }
 
-variable "openai_api_token" {
+variable "openai_api_token_rss_to_raindrop_llm" {
   description = "OpenAI API token"
   type        = string
   sensitive   = true
@@ -50,31 +50,23 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
 }
 
 # Secrets Manager - Raindrop API Key
-resource "aws_secretsmanager_secret" "raindrop_api_token" {
+resource "aws_secretsmanager_secret" "raindrop_api_token_rss_to_raindrop_llm" {
   name = "rss-to-raindrop/raindrop-api-token"
-  
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
-resource "aws_secretsmanager_secret_version" "raindrop_api_token" {
-  secret_id     = aws_secretsmanager_secret.raindrop_api_token.id
-  secret_string = var.raindrop_api_token
+resource "aws_secretsmanager_secret_version" "raindrop_api_token_rss_to_raindrop_llm" {
+  secret_id     = aws_secretsmanager_secret.raindrop_api_token_rss_to_raindrop_llm.id
+  secret_string = var.raindrop_api_token_rss_to_raindrop_llm
 }
 
 # Secrets Manager - OpenAI API Key
-resource "aws_secretsmanager_secret" "openai_api_token" {
+resource "aws_secretsmanager_secret" "openai_api_token_rss_to_raindrop_llm" {
   name = "rss-to-raindrop/openai-api-token"
-  
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
-resource "aws_secretsmanager_secret_version" "openai_api_token" {
-  secret_id     = aws_secretsmanager_secret.openai_api_token.id
-  secret_string = var.openai_api_token
+resource "aws_secretsmanager_secret_version" "openai_api_token_rss_to_raindrop_llm" {
+  secret_id     = aws_secretsmanager_secret.openai_api_token_rss_to_raindrop_llm.id
+  secret_string = var.openai_api_token_rss_to_raindrop_llm
 }
 
 # IAM policy for Lambda to access secrets
@@ -89,8 +81,8 @@ resource "aws_iam_policy" "secrets_access" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = [
-          aws_secretsmanager_secret.raindrop_api_token.arn,
-          aws_secretsmanager_secret.openai_api_token.arn
+          aws_secretsmanager_secret.raindrop_api_token_rss_to_raindrop_llm.arn,
+          aws_secretsmanager_secret.openai_api_token_rss_to_raindrop_llm.arn
         ]
       }
     ]
@@ -117,8 +109,8 @@ resource "aws_lambda_function" "rss_to_raindrop" {
   environment {
     variables = {
       CONFIG_PATH           = "/tmp/config.yaml"
-      RAINDROP_SECRET_ARN  = aws_secretsmanager_secret.raindrop_api_token.arn
-      OPENAI_SECRET_ARN    = aws_secretsmanager_secret.openai_api_token.arn
+      RAINDROP_SECRET_ARN  = aws_secretsmanager_secret.raindrop_api_token_rss_to_raindrop_llm.arn
+      OPENAI_SECRET_ARN    = aws_secretsmanager_secret.openai_api_token_rss_to_raindrop_llm.arn
     }
   }
 }

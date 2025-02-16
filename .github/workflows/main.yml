@@ -78,17 +78,11 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Import Existing Resources
-        run: |
-          # Import the secrets if they exist
-          terraform import aws_secretsmanager_secret.raindrop_api_token rss-to-raindrop/raindrop-api-token || true
-          terraform import aws_secretsmanager_secret.openai_api_token rss-to-raindrop/openai-api-token || true
-
       - name: Terraform Plan
         run: |
           terraform plan \
-            -var="raindrop_api_token=${{ secrets.raindrop_api_token }}" \
-            -var="openai_api_token=${{ secrets.openai_api_token }}"
+            -var="raindrop_api_token_rss_to_raindrop_llm=${{ secrets.raindrop_api_token_rss_to_raindrop_llm }}" \
+            -var="openai_api_token_rss_to_raindrop_llm=${{ secrets.openai_api_token_rss_to_raindrop_llm }}"
 
   deploy:
     needs: [plan]
@@ -121,14 +115,8 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Import Existing Resources
-        run: |
-          # Import the secrets if they exist
-          terraform import aws_secretsmanager_secret.raindrop_api_token rss-to-raindrop/raindrop-api-token || true
-          terraform import aws_secretsmanager_secret.openai_api_token rss-to-raindrop/openai-api-token || true
-
       - name: Terraform Apply
         run: |
           terraform apply -auto-approve \
-            -var="raindrop_api_token=${{ secrets.raindrop_api_token }}" \
-            -var="openai_api_token=${{ secrets.openai_api_token }}"
+            -var="raindrop_api_token_rss_to_raindrop_llm=${{ secrets.raindrop_api_token_rss_to_raindrop_llm }}" \
+            -var="openai_api_token_rss_to_raindrop_llm=${{ secrets.openai_api_token_rss_to_raindrop_llm }}"
