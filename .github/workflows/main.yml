@@ -11,11 +11,58 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pylint pytest
+
+      - name: Lint Python Code
+        run: |
+          pylint src/ rss_bouncer.py --disable=C,R --fail-under=8
+
+      - name: Create Lambda Package
+        run: |
+          zip -r infrastructure/lambda_function.zip src/ rss_bouncer.py requirements.txt
+          ls -la infrastructure/lambda_function.zip
+
+      - name: Upload Lambda Package
+        uses: actions/upload-artifact@v3
+        with:
+          name: lambda-package
+          path: infrastructure/lambda_function.zip
+          retention-days: 1
+
+  plan:
+    needs: [build]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./infrastructure
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Download Lambda Package
+        uses: actions/download-artifact@v3
+        with:
+          name: lambda-package
+          path: infrastructure
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -23,6 +70,47 @@ jobs:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
           aws-region: us-east-1
 
-      - name: Deploy Infrastructure
-        run: |
-          aws sts get-caller-identity
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.5.7"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan
+  
+  # deploy:
+  #   needs: [plan]
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main'
+  #   defaults:
+  #     run:
+  #       working-directory: ./infrastructure
+  #   steps:
+  #     - name: Checkout Code
+  #       uses: actions/checkout@v3
+
+  #     - name: Download Lambda Package
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: lambda-package
+  #         path: infrastructure
+
+  #     - name: Configure AWS Credentials
+  #       uses: aws-actions/configure-aws-credentials@v2
+  #       with:
+  #         role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+  #         aws-region: us-east-1
+
+  #     - name: Setup Terraform
+  #       uses: hashicorp/setup-terraform@v2
+  #       with:
+  #         terraform_version: "1.5.7"
+
+  #     - name: Terraform Init
+  #       run: terraform init
+
+  #     - name: Terraform Apply
+  #       run: terraform apply -auto-approve

@@ -72,38 +72,43 @@ resource "aws_iam_role_policy_attachment" "lambda_secrets" {
   role       = aws_iam_role.lambda_role.name
 }
 
-# Archive the Python code
-#data "archive_file" "lambda_zip" {
-#  type        = "zip"
-#  source_dir  = "${path.module}/.."
-#  output_path = "${path.module}/lambda_function.zip"
-#  excludes    = [
-#    "infrastructure",
-#    ".git",
-#    ".venv",
-#    "*.yaml",
-#    "state.json",
-#    ".DS_Store",
-#    ".gitignore"
-#  ]
-#}
-
 # Lambda function
-#resource "aws_lambda_function" "rss_to_raindrop" {
-#  filename         = data.archive_file.lambda_zip.output_path
-#  function_name    = "rss-to-raindrop"
-#  role            = aws_iam_role.lambda_role.arn
-#  handler         = "rss_bouncer.lambda_handler"
-#  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-#  runtime         = "python3.11"
-#  timeout         = 300
-#  memory_size     = 256
+resource "aws_lambda_function" "rss_to_raindrop" {
+  filename         = "${path.module}/lambda_function.zip"
+  function_name    = "rss-to-raindrop"
+  role            = aws_iam_role.lambda_role.arn
+  handler         = "rss_bouncer.lambda_handler"
+  source_code_hash = filebase64sha256("${path.module}/lambda_function.zip")
+  runtime         = "python3.11"
+  timeout         = 300
+  memory_size     = 256
 
-#  environment {
-#    variables = {
-#      CONFIG_PATH           = "/tmp/config.yaml"
-#      RAINDROP_SECRET_ARN  = aws_secretsmanager_secret.raindrop_token.arn
-#      OPENAI_SECRET_ARN    = aws_secretsmanager_secret.openai_api_key.arn
-#    }
-#  }
-#}
+  environment {
+    variables = {
+      CONFIG_PATH           = "/tmp/config.yaml"
+      RAINDROP_SECRET_ARN  = aws_secretsmanager_secret.raindrop_token.arn
+      OPENAI_SECRET_ARN    = aws_secretsmanager_secret.openai_api_key.arn
+    }
+  }
+}
+
+# CloudWatch Event Rule to trigger Lambda every hour
+resource "aws_cloudwatch_event_rule" "hourly" {
+  name                = "trigger-rss-to-raindrop-hourly"
+  description         = "Trigger RSS to Raindrop Lambda function every hour"
+  schedule_expression = "rate(1 hour)"
+}
+
+resource "aws_cloudwatch_event_target" "lambda" {
+  rule      = aws_cloudwatch_event_rule.hourly.name
+  target_id = "RSSToRaindropLambda"
+  arn       = aws_lambda_function.rss_to_raindrop.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge" {
+  statement_id  = "AllowEventBridgeInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.rss_to_raindrop.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.hourly.arn
+}
