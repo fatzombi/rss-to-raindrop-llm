@@ -72,8 +72,7 @@
                 "secretsmanager:DeleteResourcePolicy",
                 "secretsmanager:TagResource",
                 "secretsmanager:UntagResource",
-                "secretsmanager:RestoreSecret",
-                "secretsmanager:ListTagsForResource"
+                "secretsmanager:RestoreSecret"
             ],
             "Resource": [
                 "arn:aws:secretsmanager:*:*:secret:rss-to-raindrop/*",
@@ -124,7 +123,8 @@
                 "dynamodb:DescribeTimeToLive",
                 "dynamodb:UpdateTimeToLive",
                 "dynamodb:DescribeGlobalTableSettings",
-                "dynamodb:UpdateGlobalTableSettings"
+                "dynamodb:UpdateGlobalTableSettings",
+                "dynamodb:ListTagsOfResource"
             ],
             "Resource": [
                 "arn:aws:dynamodb:*:*:table/rss-to-raindrop-feed-state"

@@ -79,9 +79,8 @@ def lambda_handler(event, context):
         config_path = os.environ.get('CONFIG_PATH', 'config.yaml')
         config = load_config(config_path)
         
-        # Initialize state manager with /tmp path for Lambda
-        state_path = '/tmp/state.json'
-        state_manager = StateManager(state_path)
+        # Initialize State Manager
+        state_manager = StateManager()
         
         # Initialize analyzer
         analyzer = RSSAnalyzer(config, state_manager)
