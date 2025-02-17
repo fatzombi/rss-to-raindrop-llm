@@ -22,6 +22,10 @@
                 "iam:CreatePolicy",
                 "iam:DeletePolicy",
                 "iam:GetPolicy",
+                "iam:GetPolicyVersion",
+                "iam:CreatePolicyVersion",
+                "iam:DeletePolicyVersion",
+                "iam:SetDefaultPolicyVersion",
                 "iam:ListPolicyVersions"
             ],
             "Resource": [

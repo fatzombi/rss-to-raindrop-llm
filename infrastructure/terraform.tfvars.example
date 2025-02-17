@@ -1,0 +1,3 @@
+# Replace with your actual API tokens
+raindrop_api_token_rss_to_raindrop_llm = "your-raindrop-api-token"
+openai_api_token_rss_to_raindrop_llm   = "your-openai-api-token"

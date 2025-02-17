@@ -1,0 +1,2 @@
+# Replace with your GitHub Actions role ARN
+github_actions_role_arn = "arn:aws:iam::ACCOUNT_ID:role/ROLE_NAME"
