@@ -129,6 +129,19 @@
             "Resource": [
                 "arn:aws:dynamodb:*:*:table/rss-to-raindrop-feed-state"
             ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "kms:GetKeyRotationStatus",
+                "kms:EnableKeyRotation",
+                "kms:DisableKeyRotation",
+                "kms:CreateKey",
+                "kms:CreateAlias",
+                "kms:DeleteAlias",
+                "kms:DescribeKey"
+            ],
+            "Resource": "*"
         }
     ]
 }

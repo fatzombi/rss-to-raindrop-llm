@@ -129,20 +129,24 @@ jobs:
       - name: Delete Existing Resources
         run: |
           # List and detach all attached policies
-          for ARN in $(aws iam list-attached-role-policies --role-name rss_to_raindrop_lambda_role --query 'AttachedPolicies[*].PolicyArn' --output text); do
-            echo "Detaching policy: $ARN"
-            aws iam detach-role-policy --role-name rss_to_raindrop_lambda_role --policy-arn "$ARN"
-          done
+          if aws iam list-attached-role-policies --role-name rss_to_raindrop_lambda_role >/dev/null 2>&1; then
+            for ARN in $(aws iam list-attached-role-policies --role-name rss_to_raindrop_lambda_role --query 'AttachedPolicies[*].PolicyArn' --output text); do
+              echo "Detaching policy: $ARN"
+              aws iam detach-role-policy --role-name rss_to_raindrop_lambda_role --policy-arn "$ARN" || true
+            done
 
-          # List and delete all inline policies
-          for POLICY in $(aws iam list-role-policies --role-name rss_to_raindrop_lambda_role --query 'PolicyNames[]' --output text); do
-            echo "Deleting inline policy: $POLICY"
-            aws iam delete-role-policy --role-name rss_to_raindrop_lambda_role --policy-name "$POLICY"
-          done
+            # List and delete all inline policies
+            for POLICY in $(aws iam list-role-policies --role-name rss_to_raindrop_lambda_role --query 'PolicyNames[]' --output text); do
+              echo "Deleting inline policy: $POLICY"
+              aws iam delete-role-policy --role-name rss_to_raindrop_lambda_role --policy-name "$POLICY" || true
+            done
 
-          # Now delete the role
-          echo "Deleting role"
-          aws iam delete-role --role-name rss_to_raindrop_lambda_role
+            # Now delete the role
+            echo "Deleting role"
+            aws iam delete-role --role-name rss_to_raindrop_lambda_role || true
+          else
+            echo "Role rss_to_raindrop_lambda_role does not exist, skipping deletion"
+          fi
 
       - name: Terraform Apply
         run: |
