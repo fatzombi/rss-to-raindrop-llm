@@ -99,6 +99,32 @@ resource "aws_iam_role_policy_attachment" "lambda_secrets" {
   role       = aws_iam_role.lambda_role.name
 }
 
+# IAM policy for Lambda to access KMS
+resource "aws_iam_role_policy" "kms_access" {
+  name = "kms_access"
+  role = aws_iam_role.lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey",
+          "kms:Encrypt",
+          "kms:GenerateDataKey",
+          "kms:ReEncrypt*"
+        ]
+        Resource = [
+          "arn:aws:kms:us-east-1:490004617599:key/509ca696-d54f-4b56-99e8-f11688b96ac7",
+          "arn:aws:kms:*:*:key/*"  # For any keys used by Secrets Manager
+        ]
+      }
+    ]
+  })
+}
+
 # DynamoDB table for feed state
 resource "aws_dynamodb_table" "feed_state" {
   name           = "rss-to-raindrop-feed-state"
