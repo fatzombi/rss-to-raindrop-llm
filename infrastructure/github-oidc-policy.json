@@ -119,7 +119,12 @@
                 "dynamodb:ListTables",
                 "dynamodb:UpdateTable",
                 "dynamodb:TagResource",
-                "dynamodb:UntagResource"
+                "dynamodb:UntagResource",
+                "dynamodb:DescribeContinuousBackups",
+                "dynamodb:DescribeTimeToLive",
+                "dynamodb:UpdateTimeToLive",
+                "dynamodb:DescribeGlobalTableSettings",
+                "dynamodb:UpdateGlobalTableSettings"
             ],
             "Resource": [
                 "arn:aws:dynamodb:*:*:table/rss-to-raindrop-feed-state"
