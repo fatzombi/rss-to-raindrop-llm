@@ -125,6 +125,45 @@ resource "aws_iam_role_policy" "kms_access" {
   })
 }
 
+# KMS key for Lambda environment variables
+resource "aws_kms_key" "lambda_key" {
+  description = "KMS key for Lambda environment variables"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::490004617599:root"
+        }
+        Action = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid = "Allow Lambda to use the key"
+        Effect = "Allow"
+        Principal = {
+          AWS = aws_iam_role.lambda_role.arn
+        }
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey",
+          "kms:Encrypt",
+          "kms:GenerateDataKey",
+          "kms:ReEncrypt*"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_kms_alias" "lambda_key_alias" {
+  name          = "alias/rss-to-raindrop-lambda"
+  target_key_id = aws_kms_key.lambda_key.key_id
+}
+
 # DynamoDB table for feed state
 resource "aws_dynamodb_table" "feed_state" {
   name           = "rss-to-raindrop-feed-state"
@@ -184,6 +223,7 @@ resource "aws_lambda_function" "rss_to_raindrop" {
   runtime         = "python3.11"
   timeout         = 300
   memory_size     = 256
+  kms_key_arn     = aws_kms_key.lambda_key.arn
 
   environment {
     variables = {
