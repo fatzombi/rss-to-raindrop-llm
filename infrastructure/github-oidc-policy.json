@@ -109,6 +109,21 @@
                 "arn:aws:s3:::rss-to-raindrop-tfstate",
                 "arn:aws:s3:::rss-to-raindrop-tfstate/*"
             ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:CreateTable",
+                "dynamodb:DeleteTable",
+                "dynamodb:DescribeTable",
+                "dynamodb:ListTables",
+                "dynamodb:UpdateTable",
+                "dynamodb:TagResource",
+                "dynamodb:UntagResource"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:*:*:table/rss-to-raindrop-feed-state"
+            ]
         }
     ]
 }

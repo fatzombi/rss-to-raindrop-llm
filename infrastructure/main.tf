@@ -99,6 +99,55 @@ resource "aws_iam_role_policy_attachment" "lambda_secrets" {
   role       = aws_iam_role.lambda_role.name
 }
 
+# DynamoDB table for feed state
+resource "aws_dynamodb_table" "feed_state" {
+  name           = "rss-to-raindrop-feed-state"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "feed_url"
+  range_key      = "entry_id"
+
+  attribute {
+    name = "feed_url"
+    type = "S"
+  }
+
+  attribute {
+    name = "entry_id"
+    type = "S"
+  }
+
+  tags = {
+    Name = "RSS to Raindrop Feed State"
+  }
+}
+
+# IAM policy for Lambda to access DynamoDB
+resource "aws_iam_role_policy" "dynamodb_access" {
+  name = "dynamodb_access"
+  role = aws_iam_role.lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem",
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:Scan"
+        ]
+        Resource = [
+          aws_dynamodb_table.feed_state.arn,
+          "${aws_dynamodb_table.feed_state.arn}/index/*"
+        ]
+      }
+    ]
+  })
+}
+
 # Lambda function
 resource "aws_lambda_function" "rss_to_raindrop" {
   filename         = "${path.module}/lambda_function.zip"
