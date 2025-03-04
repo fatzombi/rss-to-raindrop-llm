@@ -249,7 +249,7 @@ resource "aws_lambda_function" "rss_to_raindrop" {
   
   environment {
     variables = {
-      CONFIG_PATH           = "/tmp/config.yaml"
+      CONFIG_PATH           = "./config.yaml"
       RAINDROP_SECRET_ARN  = aws_secretsmanager_secret.raindrop_api_token_rss_to_raindrop_llm.arn
       OPENAI_SECRET_ARN    = aws_secretsmanager_secret.openai_api_token_rss_to_raindrop_llm.arn
     }

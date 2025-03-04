@@ -49,6 +49,8 @@ jobs:
           cp -r src/* lambda_package/src/
           # Create __init__.py if it doesn't exist
           touch lambda_package/src/__init__.py
+          # Copy config file
+          cp config.yaml lambda_package/
           # Create the zip file from the package directory
           cd lambda_package
           zip -r ../infrastructure/lambda_function.zip .
