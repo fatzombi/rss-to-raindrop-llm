@@ -42,9 +42,13 @@ jobs:
 
       - name: Create Lambda Package
         run: |
-          # Copy our Lambda code into the package directory
-          cp -r src/* lambda_package/
+          # Copy our Lambda code maintaining the package structure
           cp rss_bouncer.py lambda_package/
+          # Create src directory in lambda_package and copy contents
+          mkdir -p lambda_package/src
+          cp -r src/* lambda_package/src/
+          # Create __init__.py if it doesn't exist
+          touch lambda_package/src/__init__.py
           # Create the zip file from the package directory
           cd lambda_package
           zip -r ../infrastructure/lambda_function.zip .
