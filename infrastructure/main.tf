@@ -117,7 +117,7 @@ resource "aws_iam_role_policy" "kms_access" {
           "kms:ReEncrypt*"
         ]
         Resource = [
-          "arn:aws:kms:us-east-1:490004617599:key/509ca696-d54f-4b56-99e8-f11688b96ac7",
+          aws_kms_key.lambda_key.arn,
           "arn:aws:kms:*:*:key/*"  # For any keys used by Secrets Manager
         ]
       }
@@ -125,59 +125,32 @@ resource "aws_iam_role_policy" "kms_access" {
   })
 }
 
-# KMS key for Lambda environment variables
+# KMS key for Lambda environment variables with a simple policy
 resource "aws_kms_key" "lambda_key" {
-  description = "KMS key for Lambda environment variables"
+  description         = "KMS key for Lambda environment variables"
   enable_key_rotation = true
   
-  # Use AWS's standard pattern for KMS key policies
-  policy = <<POLICY
+  # Simple policy with only the required root account access - no interpolation
+  policy = <<EOF
 {
   "Version": "2012-10-17",
-  "Id": "key-default-1",
+  "Id": "key-policy-1",
   "Statement": [
     {
       "Sid": "Enable IAM User Permissions",
       "Effect": "Allow",
-      "Principal": {"AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"},
+      "Principal": {
+        "AWS": "arn:aws:iam::490004617599:root"
+      },
       "Action": "kms:*",
       "Resource": "*"
-    },
-    {
-      "Sid": "Allow use of the key",
-      "Effect": "Allow",
-      "Principal": {"AWS": "${aws_iam_role.lambda_role.arn}"},
-      "Action": [
-        "kms:Encrypt",
-        "kms:Decrypt",
-        "kms:ReEncrypt*",
-        "kms:GenerateDataKey*",
-        "kms:DescribeKey"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Sid": "Allow attachment of persistent resources",
-      "Effect": "Allow",
-      "Principal": {"AWS": "${aws_iam_role.lambda_role.arn}"},
-      "Action": [
-        "kms:CreateGrant",
-        "kms:ListGrants",
-        "kms:RevokeGrant"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "Bool": {"kms:GrantIsForAWSResource": "true"}
-      }
     }
   ]
 }
-POLICY
+EOF
 }
 
-# Get current AWS account ID
-data "aws_caller_identity" "current" {}
-
+# KMS alias
 resource "aws_kms_alias" "lambda_key_alias" {
   name          = "alias/rss-to-raindrop-lambda"
   target_key_id = aws_kms_key.lambda_key.key_id
