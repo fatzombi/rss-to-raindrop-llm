@@ -245,7 +245,7 @@ resource "aws_lambda_function" "rss_to_raindrop" {
   source_code_hash = filebase64sha256("${path.module}/lambda_function.zip")
   runtime         = "python3.11"
   timeout         = 900  # Maximum allowed timeout (15 minutes)
-  memory_size     = 256
+  memory_size     = 1024  # Increased memory to handle RSS processing and OpenAI API calls
   
   environment {
     variables = {
