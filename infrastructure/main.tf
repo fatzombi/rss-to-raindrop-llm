@@ -99,6 +99,50 @@ resource "aws_iam_role_policy_attachment" "lambda_secrets" {
   role       = aws_iam_role.lambda_role.name
 }
 
+# Create an AWS KMS key that we control explicitly
+resource "aws_kms_key" "lambda_env_vars" {
+  description             = "KMS key for Lambda environment variables encryption"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+  
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        },
+        Action   = "kms:*",
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Principal = {
+          AWS = aws_iam_role.lambda_role.arn
+        },
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey",
+          "kms:Encrypt",
+          "kms:GenerateDataKey*",
+          "kms:ReEncrypt*"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Create a friendly alias for the key
+resource "aws_kms_alias" "lambda_env_vars" {
+  name          = "alias/rss-to-raindrop-lambda-env-vars"
+  target_key_id = aws_kms_key.lambda_env_vars.key_id
+}
+
+# Get current account ID
+data "aws_caller_identity" "current" {}
+
 # IAM policy for Lambda to access KMS
 resource "aws_iam_role_policy" "kms_access" {
   name = "kms_access"
@@ -113,12 +157,16 @@ resource "aws_iam_role_policy" "kms_access" {
           "kms:Decrypt",
           "kms:DescribeKey",
           "kms:Encrypt",
-          "kms:GenerateDataKey",
+          "kms:GenerateDataKey*",
           "kms:ReEncrypt*"
         ]
         Resource = [
-          # For any keys used by AWS services
-          "arn:aws:kms:*:*:key/*"
+          # The KMS key we're creating specifically for this Lambda
+          aws_kms_key.lambda_env_vars.arn,
+          # Also include the problematic key from the error message
+          "arn:aws:kms:us-east-1:490004617599:key/509ca696-d54f-4b56-99e8-f11688b96ac7",
+          # And any default AWS Lambda keys in the region
+          "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.current.account_id}:key/*"
         ]
       }
     ]
@@ -193,9 +241,8 @@ resource "aws_lambda_function" "rss_to_raindrop" {
     }
   }
   
-  # Disable environment variable encryption since these environment variables are not sensitive
-  # This prevents KMS permission errors when Lambda tries to decrypt variables
-  kms_key_arn = ""
+  # Explicitly use our own KMS key that we have proper permissions for
+  kms_key_arn = aws_kms_key.lambda_env_vars.arn
 }
 
 # CloudWatch Event Rule to trigger Lambda every hour
