@@ -154,6 +154,24 @@ resource "aws_kms_key" "lambda_key" {
           "kms:ReEncrypt*"
         ]
         Resource = "*"
+      },
+      {
+        Sid = "Allow attachment of persistent resources"
+        Effect = "Allow"
+        Principal = {
+          AWS = aws_iam_role.lambda_role.arn
+        }
+        Action = [
+          "kms:CreateGrant",
+          "kms:ListGrants",
+          "kms:RevokeGrant"
+        ]
+        Resource = "*"
+        Condition = {
+          Bool = {
+            "kms:GrantIsForAWSResource": "true"
+          }
+        }
       }
     ]
   })

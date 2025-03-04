@@ -139,7 +139,10 @@
                 "kms:CreateKey",
                 "kms:CreateAlias",
                 "kms:DeleteAlias",
-                "kms:DescribeKey"
+                "kms:DescribeKey",
+                "kms:GetKeyPolicy",
+                "kms:ListResourceTags",
+                "kms:ScheduleKeyDeletion"
             ],
             "Resource": "*"
         }
