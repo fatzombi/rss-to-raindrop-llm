@@ -1,0 +1,67 @@
+raindrop:
+  collections:
+    read: "51797159"
+    maybe: "51964730"
+    skip: "51797160"
+  save_skipped: true # Set to false once filters are tuned
+
+openai:
+  model: "gpt-4o-mini" # Model to use for article analysis
+
+processing:
+  batch_size: 5 # Number of articles to process in each batch
+
+filters:
+  max_article_age_years: 5
+  personas:
+    - name: "Security Consultant"
+      interests:
+        - "Security research with practical applications"
+        - "Zero-day vulnerabilities and novel attack techniques"
+        - "Security tooling and automation"
+
+    - name: "Cloud Security Engineer"
+      interests:
+        - "Announcements related to new offerings or changes in AWS, Azure, GCP, or other cloud platforms"
+        - "Cloud architecture and design"
+
+    - name: "Technologist"
+      interests:
+        - "LLMs, AI, and Machine Learning"
+        - "Software development and engineering"
+        - "DevOps and automation"
+
+    - name: "Hobbyist"
+      interests:
+        - "3D printing"
+        - "3D model creation and editing"
+        - "Woodworking"
+        - "Drones"
+        - "Comical inventions, like melting snow with a flamethrower"
+
+    - name: "Aspiring Stoic"
+      interests:
+        - "Stoicism"
+        - "Philosophy"
+        - "Meditation"
+        - "Self-improvement"
+        - "Spirituality"
+
+  skip_criteria:
+    - "Articles about HackTheBox, TryHackMe, VulnHub, or other intentionally vulnerable platforms. Unless the article is a compilation of multiple resources."
+    - "Hardware hacking"
+    - "Novelty hardware"
+    - "Rants without a specific topic or evidence to support them"
+
+  collection_rules:
+    read:
+      - "Strongly aligns with at least one persona's interests"
+      - "Contains actionable information or novel insights"
+      - "Matches priority topics"
+    maybe:
+      - "Partially aligns with interests but requires further evaluation"
+      - "Could be useful but not immediately actionable"
+      - "Topics adjacent to core interests"
+    skip:
+      - "Matches skip criteria"
+      - "Contains unactionable information"

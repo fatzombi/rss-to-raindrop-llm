@@ -108,14 +108,29 @@ class RSSAnalyzer:
         Args:
             should_shutdown: Optional callback to check if shutdown is requested
         """
-        total_feeds = len(self.config['feeds'])
-        for feed_num, feed_url in enumerate(self.config['feeds'], 1):
+        # Get feeds from DynamoDB instead of config
+        feeds = self.state_manager.get_all_feeds()
+        
+        if not feeds:
+            logger.warning("No feeds found in DynamoDB. Nothing to process.")
+            print("No feeds found in DynamoDB. Nothing to process.")
+            return
+            
+        total_feeds = len(feeds)
+        logger.info(f"Found {total_feeds} feeds to process")
+        print(f"Found {total_feeds} feeds to process")
+        
+        # Create a default shutdown function if none is provided
+        if should_shutdown is None:
+            should_shutdown = lambda: False
+        
+        for feed_num, feed_url in enumerate(feeds, 1):
             try:
                 print(f"\nProcessing feed {feed_num}/{total_feeds}: {feed_url}")
                 logger.info(f"Starting to process feed: {feed_url}")
                 
                 # Check for shutdown request before starting each feed
-                if should_shutdown and should_shutdown():
+                if should_shutdown():
                     remaining = total_feeds - feed_num
                     print(f"\nSkipping remaining {remaining} feed(s) due to shutdown request.")
                     logger.info(f"Shutdown requested. Skipping {remaining} remaining feeds.")

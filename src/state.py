@@ -14,7 +14,7 @@ class StateManager:
     
     def __init__(self, table_name: str = "rss-to-raindrop-feed-state"):
         """
-        Initialize state manager.
+        Initialize state manager with DynamoDB.
         
         Args:
             table_name: Name of the DynamoDB table
@@ -149,3 +149,38 @@ class StateManager:
         except ClientError as e:
             logger.error(f"Error updating feed state for {feed_url}: {str(e)}")
             raise
+
+    def get_all_feeds(self) -> list:
+        """
+        Get all unique feed URLs from the DynamoDB table.
+        
+        Returns:
+            List of unique feed URLs
+        """
+        feed_urls = set()
+        try:
+            # Use scan operation to get all items
+            # Note: For production with many feeds, consider using a secondary index or pagination
+            response = self.table.scan(
+                ProjectionExpression='feed_url'
+            )
+            
+            # Extract feed URLs from response
+            for item in response.get('Items', []):
+                feed_urls.add(item.get('feed_url'))
+                
+            # Handle pagination if there are more items
+            while 'LastEvaluatedKey' in response:
+                response = self.table.scan(
+                    ProjectionExpression='feed_url',
+                    ExclusiveStartKey=response['LastEvaluatedKey']
+                )
+                for item in response.get('Items', []):
+                    feed_urls.add(item.get('feed_url'))
+            
+            logger.info(f"Retrieved {len(feed_urls)} unique feed URLs from DynamoDB")
+            return list(feed_urls)
+            
+        except ClientError as e:
+            logger.error(f"Error retrieving feeds from DynamoDB: {str(e)}")
+            return []

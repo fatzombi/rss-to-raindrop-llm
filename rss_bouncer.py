@@ -42,36 +42,6 @@ def load_config(config_path: str) -> dict:
         logger.error(f"Error loading config: {str(e)}")
         raise
 
-def main():
-    """Main entry point."""
-    try:
-        # Load configuration
-        config_dir = os.path.dirname(os.path.abspath(__file__))
-        config_path = os.path.join(config_dir, 'config.yaml')
-        config = load_config(config_path)
-        
-        # Initialize state manager
-        state_path = os.path.join(config_dir, 'state.json')
-        state_manager = StateManager(state_path)
-        
-        # Initialize analyzer
-        analyzer = RSSAnalyzer(config, state_manager)
-        
-        # Set up signal handlers
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
-        
-        # Start processing
-        logger.info("Starting RSS Feed Bouncer...")
-        logger.info("Press Ctrl+C to gracefully shutdown")
-        
-        analyzer.process_feeds(lambda: should_shutdown.is_set())
-        
-    except Exception as e:
-        logger.error(f"Application error: {str(e)}", exc_info=True)
-        print(f"\nError: {str(e)}")
-        sys.exit(1)
-
 def lambda_handler(event, context):
     """AWS Lambda handler function."""
     try:
@@ -100,4 +70,4 @@ def lambda_handler(event, context):
         }
 
 if __name__ == "__main__":
-    main()
+    lambda_handler({}, {})
