@@ -192,6 +192,10 @@ resource "aws_lambda_function" "rss_to_raindrop" {
       OPENAI_SECRET_ARN    = aws_secretsmanager_secret.openai_api_token_rss_to_raindrop_llm.arn
     }
   }
+  
+  # Disable environment variable encryption since these environment variables are not sensitive
+  # This prevents KMS permission errors when Lambda tries to decrypt variables
+  kms_key_arn = ""
 }
 
 # CloudWatch Event Rule to trigger Lambda every hour
