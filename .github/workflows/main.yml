@@ -29,6 +29,10 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
+          # Install dependencies to a specific directory we can reuse
+          mkdir -p lambda_package
+          pip install --target lambda_package -r requirements.txt
+          # Also install globally for linting/testing
           pip install -r requirements.txt
           pip install pylint pytest
 
@@ -38,7 +42,13 @@ jobs:
 
       - name: Create Lambda Package
         run: |
-          zip -r infrastructure/lambda_function.zip src/ rss_bouncer.py requirements.txt
+          # Copy our Lambda code into the package directory
+          cp -r src/* lambda_package/
+          cp rss_bouncer.py lambda_package/
+          # Create the zip file from the package directory
+          cd lambda_package
+          zip -r ../infrastructure/lambda_function.zip .
+          cd ..
           ls -la infrastructure/lambda_function.zip
 
       - name: Upload Lambda Package
