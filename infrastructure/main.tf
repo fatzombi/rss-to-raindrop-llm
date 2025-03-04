@@ -244,7 +244,7 @@ resource "aws_lambda_function" "rss_to_raindrop" {
   handler         = "rss_bouncer.lambda_handler"
   source_code_hash = filebase64sha256("${path.module}/lambda_function.zip")
   runtime         = "python3.11"
-  timeout         = 300
+  timeout         = 900  # Maximum allowed timeout (15 minutes)
   memory_size     = 256
   
   environment {
