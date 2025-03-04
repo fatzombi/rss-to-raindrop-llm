@@ -82,7 +82,8 @@ jobs:
         run: |
           terraform plan \
             -var="raindrop_api_token_rss_to_raindrop_llm=${{ secrets.RAINDROP_API_TOKEN }}" \
-            -var="openai_api_token_rss_to_raindrop_llm=${{ secrets.OPENAI_API_TOKEN }}"
+            -var="openai_api_token_rss_to_raindrop_llm=${{ secrets.OPENAI_API_TOKEN }}" \
+            -var="github_actions_role_arn=${{ secrets.AWS_IAM_ROLE_ARN }}"
 
   deploy:
     needs: [plan]
@@ -125,6 +126,10 @@ jobs:
             echo "Error: OPENAI_API_TOKEN secret is not set"
             exit 1
           fi
+          if [ -z "${{ secrets.AWS_IAM_ROLE_ARN }}" ]; then
+            echo "Error: AWS_IAM_ROLE_ARN secret is not set"
+            exit 1
+          fi
 
       - name: Delete Existing Resources
         run: |
@@ -152,4 +157,5 @@ jobs:
         run: |
           terraform apply -auto-approve \
             -var="raindrop_api_token_rss_to_raindrop_llm=${{ secrets.RAINDROP_API_TOKEN }}" \
-            -var="openai_api_token_rss_to_raindrop_llm=${{ secrets.OPENAI_API_TOKEN }}"
+            -var="openai_api_token_rss_to_raindrop_llm=${{ secrets.OPENAI_API_TOKEN }}" \
+            -var="github_actions_role_arn=${{ secrets.AWS_IAM_ROLE_ARN }}"
