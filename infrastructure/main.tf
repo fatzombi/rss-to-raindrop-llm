@@ -99,39 +99,53 @@ resource "aws_iam_role_policy_attachment" "lambda_secrets" {
   role       = aws_iam_role.lambda_role.name
 }
 
-# Create an AWS KMS key that we control explicitly
+# Get current account ID
+data "aws_caller_identity" "current" {}
+
+# Variable for GitHub Actions role ARN (optional)
+variable "github_actions_role_arn" {
+  description = "ARN of the GitHub Actions role that deploys this infrastructure"
+  type        = string
+  default     = ""  # Will be populated from environment or tfvars
+}
+
+# Create an AWS KMS key with proper permissions
 resource "aws_kms_key" "lambda_env_vars" {
   description             = "KMS key for Lambda environment variables encryption"
   deletion_window_in_days = 7
   enable_key_rotation     = true
   
+  # Use a properly structured policy document
   policy = jsonencode({
     Version = "2012-10-17",
+    Id = "key-default-1",
     Statement = [
       {
+        Sid = "Enable IAM User Permissions",
         Effect = "Allow",
         Principal = {
           AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
         },
-        Action   = "kms:*",
+        Action = "kms:*",
         Resource = "*"
       },
       {
+        Sid = "Allow use of the key by Lambda",
         Effect = "Allow",
         Principal = {
           AWS = aws_iam_role.lambda_role.arn
         },
         Action = [
           "kms:Decrypt",
-          "kms:DescribeKey",
-          "kms:Encrypt",
-          "kms:GenerateDataKey*",
-          "kms:ReEncrypt*"
+          "kms:DescribeKey"
         ],
         Resource = "*"
       }
     ]
   })
+
+  # Prevent circular dependency with the role
+  depends_on = [aws_iam_role.lambda_role]
 }
 
 # Create a friendly alias for the key
@@ -139,9 +153,6 @@ resource "aws_kms_alias" "lambda_env_vars" {
   name          = "alias/rss-to-raindrop-lambda-env-vars"
   target_key_id = aws_kms_key.lambda_env_vars.key_id
 }
-
-# Get current account ID
-data "aws_caller_identity" "current" {}
 
 # IAM policy for Lambda to access KMS
 resource "aws_iam_role_policy" "kms_access" {
@@ -155,20 +166,19 @@ resource "aws_iam_role_policy" "kms_access" {
         Effect = "Allow"
         Action = [
           "kms:Decrypt",
-          "kms:DescribeKey",
-          "kms:Encrypt",
-          "kms:GenerateDataKey*",
-          "kms:ReEncrypt*"
-        ]
+          "kms:DescribeKey"
+        ],
         Resource = [
-          # The KMS key we're creating specifically for this Lambda
           aws_kms_key.lambda_env_vars.arn,
-          # And any default AWS Lambda keys in the region
+          # Also include AWS managed Lambda keys
           "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.current.account_id}:key/*"
         ]
       }
     ]
   })
+
+  # Prevent circular dependency
+  depends_on = [aws_kms_key.lambda_env_vars]
 }
 
 # DynamoDB table for feed state
@@ -239,8 +249,15 @@ resource "aws_lambda_function" "rss_to_raindrop" {
     }
   }
   
-  # Explicitly use our own KMS key that we have proper permissions for
+  # Explicitly set to null to disable encryption if KMS key creation fails
+  # Comment this line out to use AWS-managed key, or uncomment to disable encryption
+  # kms_key_arn = null
+  
+  # Use our custom KMS key
   kms_key_arn = aws_kms_key.lambda_env_vars.arn
+  
+  # Ensure KMS key exists before creating the Lambda
+  depends_on = [aws_kms_key.lambda_env_vars, aws_iam_role_policy.kms_access]
 }
 
 # CloudWatch Event Rule to trigger Lambda every hour
