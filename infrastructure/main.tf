@@ -128,54 +128,55 @@ resource "aws_iam_role_policy" "kms_access" {
 # KMS key for Lambda environment variables
 resource "aws_kms_key" "lambda_key" {
   description = "KMS key for Lambda environment variables"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid = "Enable IAM User Permissions"
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::490004617599:root"
-        }
-        Action = "kms:*"
-        Resource = "*"
-      },
-      {
-        Sid = "Allow Lambda to use the key"
-        Effect = "Allow"
-        Principal = {
-          AWS = aws_iam_role.lambda_role.arn
-        }
-        Action = [
-          "kms:Decrypt",
-          "kms:DescribeKey",
-          "kms:Encrypt",
-          "kms:GenerateDataKey",
-          "kms:ReEncrypt*"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid = "Allow attachment of persistent resources"
-        Effect = "Allow"
-        Principal = {
-          AWS = aws_iam_role.lambda_role.arn
-        }
-        Action = [
-          "kms:CreateGrant",
-          "kms:ListGrants",
-          "kms:RevokeGrant"
-        ]
-        Resource = "*"
-        Condition = {
-          Bool = {
-            "kms:GrantIsForAWSResource": "true"
-          }
-        }
+  enable_key_rotation = true
+  
+  # Use AWS's standard pattern for KMS key policies
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Id": "key-default-1",
+  "Statement": [
+    {
+      "Sid": "Enable IAM User Permissions",
+      "Effect": "Allow",
+      "Principal": {"AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"},
+      "Action": "kms:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "Allow use of the key",
+      "Effect": "Allow",
+      "Principal": {"AWS": "${aws_iam_role.lambda_role.arn}"},
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "Allow attachment of persistent resources",
+      "Effect": "Allow",
+      "Principal": {"AWS": "${aws_iam_role.lambda_role.arn}"},
+      "Action": [
+        "kms:CreateGrant",
+        "kms:ListGrants",
+        "kms:RevokeGrant"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "Bool": {"kms:GrantIsForAWSResource": "true"}
       }
-    ]
-  })
+    }
+  ]
 }
+POLICY
+}
+
+# Get current AWS account ID
+data "aws_caller_identity" "current" {}
 
 resource "aws_kms_alias" "lambda_key_alias" {
   name          = "alias/rss-to-raindrop-lambda"
