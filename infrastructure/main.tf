@@ -163,8 +163,6 @@ resource "aws_iam_role_policy" "kms_access" {
         Resource = [
           # The KMS key we're creating specifically for this Lambda
           aws_kms_key.lambda_env_vars.arn,
-          # Also include the problematic key from the error message
-          "arn:aws:kms:us-east-1:490004617599:key/509ca696-d54f-4b56-99e8-f11688b96ac7",
           # And any default AWS Lambda keys in the region
           "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.current.account_id}:key/*"
         ]
