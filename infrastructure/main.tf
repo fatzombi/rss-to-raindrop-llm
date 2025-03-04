@@ -124,7 +124,8 @@ resource "aws_kms_key" "lambda_env_vars" {
         Sid = "Enable IAM User Permissions",
         Effect = "Allow",
         Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+          AWS = github_actions_role_arn
+          
         },
         Action = "kms:*",
         Resource = "*"
@@ -135,8 +136,11 @@ resource "aws_kms_key" "lambda_env_vars" {
         Principal = {
           AWS = aws_iam_role.lambda_role.arn
         },
-        Action = [
+        Action = [          
+          "kms:Encrypt",
           "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
           "kms:DescribeKey"
         ],
         Resource = "*"
