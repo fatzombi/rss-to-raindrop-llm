@@ -117,43 +117,12 @@ resource "aws_iam_role_policy" "kms_access" {
           "kms:ReEncrypt*"
         ]
         Resource = [
-          aws_kms_key.lambda_key.arn,
-          "arn:aws:kms:*:*:key/*"  # For any keys used by Secrets Manager
+          # For any keys used by AWS services
+          "arn:aws:kms:*:*:key/*"
         ]
       }
     ]
   })
-}
-
-# KMS key for Lambda environment variables with a simple policy
-resource "aws_kms_key" "lambda_key" {
-  description         = "KMS key for Lambda environment variables"
-  enable_key_rotation = true
-  
-  # Simple policy with only the required root account access - no interpolation
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Id": "key-policy-1",
-  "Statement": [
-    {
-      "Sid": "Enable IAM User Permissions",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::490004617599:root"
-      },
-      "Action": "kms:*",
-      "Resource": "*"
-    }
-  ]
-}
-EOF
-}
-
-# KMS alias
-resource "aws_kms_alias" "lambda_key_alias" {
-  name          = "alias/rss-to-raindrop-lambda"
-  target_key_id = aws_kms_key.lambda_key.key_id
 }
 
 # DynamoDB table for feed state
@@ -215,8 +184,7 @@ resource "aws_lambda_function" "rss_to_raindrop" {
   runtime         = "python3.11"
   timeout         = 300
   memory_size     = 256
-  kms_key_arn     = aws_kms_key.lambda_key.arn
-
+  
   environment {
     variables = {
       CONFIG_PATH           = "/tmp/config.yaml"
