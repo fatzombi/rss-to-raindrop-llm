@@ -25,7 +25,7 @@ class StateManager:
     
     def get_feed_state(self, feed_url: str) -> Dict[str, Any]:
         """
-        Get complete state for a feed.
+        Get state for a feed.
         
         Args:
             feed_url: URL of the feed
@@ -34,14 +34,10 @@ class StateManager:
             Dict containing feed state or empty dict if not found
         """
         try:
-            response = self.table.query(
-                KeyConditionExpression='feed_url = :url',
-                ExpressionAttributeValues={':url': feed_url},
-                Limit=1,
-                ScanIndexForward=False  # Get most recent entry
+            response = self.table.get_item(
+                Key={'feed_url': feed_url}
             )
-            items = response.get('Items', [])
-            return items[0] if items else {}
+            return response.get('Item', {})
         except ClientError as e:
             logger.error(f"Error getting feed state for {feed_url}: {str(e)}")
             return {}
@@ -125,7 +121,6 @@ class StateManager:
             logger.debug(f"Added UTC timezone to last_pub_date: {last_pub_date.isoformat()}")
         
         now = datetime.now(tz.tzutc())
-        entry_id = now.strftime("%Y%m%d%H%M%S")
         
         try:
             # Get current total processed count
@@ -133,13 +128,15 @@ class StateManager:
             total_processed = current_state.get('processed_count', 0) + processed_count
             
             # Update state in DynamoDB
-            self.table.put_item(Item={
-                'feed_url': feed_url,
-                'entry_id': entry_id,
-                'last_pub_date': last_pub_date.isoformat(),
-                'last_processed': now.isoformat(),
-                'processed_count': total_processed
-            })
+            self.table.update_item(
+                Key={'feed_url': feed_url},
+                UpdateExpression='SET last_pub_date = :lpd, last_processed = :lp, processed_count = :pc',
+                ExpressionAttributeValues={
+                    ':lpd': last_pub_date.isoformat(),
+                    ':lp': now.isoformat(),
+                    ':pc': total_processed
+                }
+            )
             
             logger.debug(
                 f"Updated state for feed {feed_url}:\n"
@@ -157,7 +154,7 @@ class StateManager:
         Returns:
             List of unique feed URLs
         """
-        feed_urls = set()
+        feed_urls = []
         try:
             # Use scan operation to get all items
             # Note: For production with many feeds, consider using a secondary index or pagination
@@ -167,7 +164,7 @@ class StateManager:
             
             # Extract feed URLs from response
             for item in response.get('Items', []):
-                feed_urls.add(item.get('feed_url'))
+                feed_urls.append(item.get('feed_url'))
                 
             # Handle pagination if there are more items
             while 'LastEvaluatedKey' in response:
@@ -176,10 +173,10 @@ class StateManager:
                     ExclusiveStartKey=response['LastEvaluatedKey']
                 )
                 for item in response.get('Items', []):
-                    feed_urls.add(item.get('feed_url'))
+                    feed_urls.append(item.get('feed_url'))
             
             logger.info(f"Retrieved {len(feed_urls)} unique feed URLs from DynamoDB")
-            return list(feed_urls)
+            return feed_urls
             
         except ClientError as e:
             logger.error(f"Error retrieving feeds from DynamoDB: {str(e)}")

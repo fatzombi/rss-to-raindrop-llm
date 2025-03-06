@@ -192,15 +192,9 @@ resource "aws_dynamodb_table" "feed_state" {
   name           = "rss-to-raindrop-feed-state"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "feed_url"
-  range_key      = "entry_id"
 
   attribute {
     name = "feed_url"
-    type = "S"
-  }
-
-  attribute {
-    name = "entry_id"
     type = "S"
   }
 

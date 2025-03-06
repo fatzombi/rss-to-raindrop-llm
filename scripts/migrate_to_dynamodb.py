@@ -26,10 +26,6 @@ def migrate_state():
         # Get the feeds data
         feeds = state_data.get('feeds', {})
         
-        # Generate a timestamp for all entries
-        now = datetime.now(tz.tzutc())
-        entry_id = now.strftime("%Y%m%d%H%M%S")
-        
         # Migrate each feed's state
         for feed_url, feed_state in feeds.items():
             try:
@@ -38,7 +34,6 @@ def migrate_state():
                 # Create DynamoDB item
                 item = {
                     'feed_url': feed_url,
-                    'entry_id': entry_id,
                     'processed_count': feed_state.get('processed_count', 0)
                 }
                 
